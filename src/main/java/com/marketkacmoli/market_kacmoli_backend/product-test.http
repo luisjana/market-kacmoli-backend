@@ -1,0 +1,93 @@
+### Shto Molle
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "name": "Molle",
+  "category": "Fruta & Perime",
+  "price": 120,
+  "image": "/images/apple.jpg"
+}
+
+###
+
+### Shto Djath
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "name": "Djath",
+  "category": "Bulmet",
+  "price": 700,
+  "image": "/images/cheese.jpg"
+}
+
+###
+
+### Shto Kafe
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "name": "Kafe",
+  "category": "Pije",
+  "price": 500,
+  "image": "/images/coffee.jpg"
+}
+
+### Oferta Qumesht
+POST http://localhost:8080/api/offers
+Content-Type: application/json
+
+{
+  "name": "Qumesht",
+  "oldPrice": 150,
+  "newPrice": 120,
+  "discount": 20,
+  "image": "/images/milk.jpg"
+}
+
+###
+
+### Oferta Molle
+POST http://localhost:8080/api/offers
+Content-Type: application/json
+
+{
+  "name": "Molle",
+  "oldPrice": 120,
+  "newPrice": 90,
+  "discount": 25,
+  "image": "/images/apple.jpg"
+}
+
+###
+
+### Oferta Djath
+POST http://localhost:8080/api/offers
+Content-Type: application/json
+
+{
+  "name": "Djath",
+  "oldPrice": 700,
+  "newPrice": 595,
+  "discount": 15,
+  "image": "/images/cheese.jpg"
+}
+
+###
+
+### Oferta Kafe
+POST http://localhost:8080/api/offers
+Content-Type: application/json
+
+{
+  "name": "Kafe",
+  "oldPrice": 500,
+  "newPrice": 400,
+  "discount": 20,
+  "image": "/images/coffee.jpg"
+}
+
+
+
