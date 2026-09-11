@@ -39,22 +39,17 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Përdorim setAllowedOriginPatterns në vend të setAllowedOrigins
+        // Përdorim setAllowedOriginPatterns për të shmangur konfliktin me allowCredentials
         configuration.setAllowedOriginPatterns(
                 List.of(
                         "https://market-kacmoli-ecru.vercel.app",
-                        "http://localhost:4200"
+                        "http://localhost:4200",
+                        "http://localhost:3000"
                 )
         );
 
         configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS"
-                )
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
@@ -63,13 +58,8 @@ public class SecurityConfig {
 
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
