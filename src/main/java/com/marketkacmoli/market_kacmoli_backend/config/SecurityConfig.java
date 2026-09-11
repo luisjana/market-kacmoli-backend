@@ -39,8 +39,8 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Këtu shtojmë edhe domenin e Vercel edhe localhost
-        configuration.setAllowedOrigins(
+        // Përdorim setAllowedOriginPatterns në vend të setAllowedOrigins
+        configuration.setAllowedOriginPatterns(
                 List.of(
                         "https://market-kacmoli-ecru.vercel.app",
                         "http://localhost:4200"
