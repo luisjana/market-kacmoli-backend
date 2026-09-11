@@ -18,7 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(
+                .allowedOriginPatterns(
                         "https://market-kacmoli-ecru.vercel.app",
                         "http://localhost:4200"
                 )
