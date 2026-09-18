@@ -50,6 +50,41 @@ public class CatalogController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+    // Vetem admin - edito nje katalog ekzistues (titull dhe/ose foto)
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateCatalog(
+            @PathVariable Long id,
+            @RequestParam("title") String title,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        Optional<Catalog> found = catalogRepository.findById(id);
+
+        if (found.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Catalog catalog = found.get();
+        catalog.setTitle(title);
+
+        try {
+            if (file != null && !file.isEmpty()) {
+                // fshi foton e vjeter nga Cloudinary
+                cloudinary.uploader().destroy(catalog.getPublicId(), ObjectUtils.emptyMap());
+
+                // ngarko foton e re
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                catalog.setImageUrl((String) uploadResult.get("secure_url"));
+                catalog.setPublicId((String) uploadResult.get("public_id"));
+            }
+
+            catalog.setUpdatedAt(LocalDateTime.now());
+            catalogRepository.save(catalog);
+
+            return ResponseEntity.ok(catalog);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     // Vetem admin - fshin nje katalog specifik sipas id
     @DeleteMapping("/{id}")
