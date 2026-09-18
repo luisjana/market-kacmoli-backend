@@ -2,6 +2,8 @@ package com.marketkacmoli.market_kacmoli_backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Catalog {
@@ -13,21 +15,17 @@ public class Catalog {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 500)
-    private String imageUrl;
-
-    @Column(nullable = false)
-    private String publicId;
-
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "catalog", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<CatalogImage> images = new ArrayList<>();
 
     public Catalog() {
     }
 
-    public Catalog(String title, String imageUrl, String publicId, LocalDateTime updatedAt) {
+    public Catalog(String title, LocalDateTime updatedAt) {
         this.title = title;
-        this.imageUrl = imageUrl;
-        this.publicId = publicId;
         this.updatedAt = updatedAt;
     }
 
@@ -47,27 +45,19 @@ public class Catalog {
         this.title = title;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public String getPublicId() {
-        return publicId;
-    }
-
-    public void setPublicId(String publicId) {
-        this.publicId = publicId;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<CatalogImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<CatalogImage> images) {
+        this.images = images;
     }
 }

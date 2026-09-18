@@ -3,6 +3,7 @@ package com.marketkacmoli.market_kacmoli_backend.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.marketkacmoli.market_kacmoli_backend.model.Catalog;
+import com.marketkacmoli.market_kacmoli_backend.model.CatalogImage;
 import com.marketkacmoli.market_kacmoli_backend.repository.CatalogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,38 +25,45 @@ public class CatalogController {
     @Autowired
     private Cloudinary cloudinary;
 
-    // Publik - kthen te gjitha kataloget
+    // Publik - kthen te gjitha kataloget (secili me listen e fotove te tij)
     @GetMapping
     public ResponseEntity<List<Catalog>> getAllCatalogs() {
-        List<Catalog> all = catalogRepository.findAll();
-        return ResponseEntity.ok(all);
+        return ResponseEntity.ok(catalogRepository.findAll());
     }
 
-    // Vetem admin - shton nje katalog te ri (nuk fshin te vjetrit)
+    // Vetem admin - krijon nje katalog te ri me disa foto njeheresh
     @PostMapping
     public ResponseEntity<?> uploadCatalog(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("title") String title
+            @RequestParam("title") String title,
+            @RequestParam("files") MultipartFile[] files
     ) {
         try {
-            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-            String url = (String) uploadResult.get("secure_url");
-            String publicId = (String) uploadResult.get("public_id");
+            Catalog catalog = new Catalog(title, LocalDateTime.now());
 
-            Catalog catalog = new Catalog(title, url, publicId, LocalDateTime.now());
+            int position = 0;
+            for (MultipartFile file : files) {
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                String url = (String) uploadResult.get("secure_url");
+                String publicId = (String) uploadResult.get("public_id");
+
+                CatalogImage image = new CatalogImage(url, publicId, position, catalog);
+                catalog.getImages().add(image);
+                position++;
+            }
+
             catalogRepository.save(catalog);
-
             return ResponseEntity.ok(catalog);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
-    // Vetem admin - edito nje katalog ekzistues (titull dhe/ose foto)
+
+    // Vetem admin - edito titullin, dhe/ose shto foto te reja ne fund te katalogut
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCatalog(
             @PathVariable Long id,
             @RequestParam("title") String title,
-            @RequestParam(value = "file", required = false) MultipartFile file
+            @RequestParam(value = "files", required = false) MultipartFile[] files
     ) {
         Optional<Catalog> found = catalogRepository.findById(id);
 
@@ -67,14 +75,18 @@ public class CatalogController {
         catalog.setTitle(title);
 
         try {
-            if (file != null && !file.isEmpty()) {
-                // fshi foton e vjeter nga Cloudinary
-                cloudinary.uploader().destroy(catalog.getPublicId(), ObjectUtils.emptyMap());
+            if (files != null && files.length > 0) {
+                int position = catalog.getImages().size();
 
-                // ngarko foton e re
-                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-                catalog.setImageUrl((String) uploadResult.get("secure_url"));
-                catalog.setPublicId((String) uploadResult.get("public_id"));
+                for (MultipartFile file : files) {
+                    Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                    String url = (String) uploadResult.get("secure_url");
+                    String publicId = (String) uploadResult.get("public_id");
+
+                    CatalogImage image = new CatalogImage(url, publicId, position, catalog);
+                    catalog.getImages().add(image);
+                    position++;
+                }
             }
 
             catalog.setUpdatedAt(LocalDateTime.now());
@@ -86,7 +98,7 @@ public class CatalogController {
         }
     }
 
-    // Vetem admin - fshin nje katalog specifik sipas id
+    // Vetem admin - fshin nje katalog te tere (te gjitha fotot e tij nga Cloudinary + DB)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCatalog(@PathVariable Long id) {
         Optional<Catalog> found = catalogRepository.findById(id);
@@ -97,13 +109,50 @@ public class CatalogController {
 
         Catalog catalog = found.get();
 
-        try {
-            cloudinary.uploader().destroy(catalog.getPublicId(), ObjectUtils.emptyMap());
-        } catch (Exception e) {
-            // vazhdo edhe nese Cloudinary deshton
+        for (CatalogImage image : catalog.getImages()) {
+            try {
+                cloudinary.uploader().destroy(image.getPublicId(), ObjectUtils.emptyMap());
+            } catch (Exception e) {
+                // vazhdo edhe nese Cloudinary deshton per nje foto
+            }
         }
 
         catalogRepository.delete(catalog);
         return ResponseEntity.ok().body(Map.of("deleted", true));
+    }
+
+    // Vetem admin - fshin nje foto te vetme nga nje katalog
+    @DeleteMapping("/{catalogId}/images/{imageId}")
+    public ResponseEntity<?> deleteCatalogImage(
+            @PathVariable Long catalogId,
+            @PathVariable Long imageId
+    ) {
+        Optional<Catalog> found = catalogRepository.findById(catalogId);
+
+        if (found.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Catalog catalog = found.get();
+
+        CatalogImage toRemove = catalog.getImages().stream()
+                .filter(img -> img.getId().equals(imageId))
+                .findFirst()
+                .orElse(null);
+
+        if (toRemove == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            cloudinary.uploader().destroy(toRemove.getPublicId(), ObjectUtils.emptyMap());
+        } catch (Exception e) {
+            // vazhdo gjithsesi
+        }
+
+        catalog.getImages().remove(toRemove);
+        catalogRepository.save(catalog);
+
+        return ResponseEntity.ok(catalog);
     }
 }
