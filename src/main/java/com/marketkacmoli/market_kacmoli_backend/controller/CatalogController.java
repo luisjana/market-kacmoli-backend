@@ -24,35 +24,25 @@ public class CatalogController {
     @Autowired
     private Cloudinary cloudinary;
 
-    // Publik - e thërret faqja kryesore
+    // Publik - kthen te gjitha kataloget
     @GetMapping
-    public ResponseEntity<?> getCatalog() {
+    public ResponseEntity<List<Catalog>> getAllCatalogs() {
         List<Catalog> all = catalogRepository.findAll();
-        if (all.isEmpty()) {
-            return ResponseEntity.ok().body(Map.of("exists", false));
-        }
-        Catalog catalog = all.get(0);
-        return ResponseEntity.ok(catalog);
+        return ResponseEntity.ok(all);
     }
 
-    // Vetëm admin - upload/ndryshim katalogu
+    // Vetem admin - shton nje katalog te ri (nuk fshin te vjetrit)
     @PostMapping
-    public ResponseEntity<?> uploadCatalog(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadCatalog(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("title") String title
+    ) {
         try {
-            // Fshi katalogun e vjetër nëse ekziston
-            List<Catalog> existing = catalogRepository.findAll();
-            if (!existing.isEmpty()) {
-                Catalog old = existing.get(0);
-                cloudinary.uploader().destroy(old.getPublicId(), ObjectUtils.emptyMap());
-                catalogRepository.delete(old);
-            }
-
-            // Ngarko të riun
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             String url = (String) uploadResult.get("secure_url");
             String publicId = (String) uploadResult.get("public_id");
 
-            Catalog catalog = new Catalog(url, publicId, LocalDateTime.now());
+            Catalog catalog = new Catalog(title, url, publicId, LocalDateTime.now());
             catalogRepository.save(catalog);
 
             return ResponseEntity.ok(catalog);
@@ -61,20 +51,24 @@ public class CatalogController {
         }
     }
 
-    // Vetëm admin - fshirje katalogu
-    @DeleteMapping
-    public ResponseEntity<?> deleteCatalog() {
-        List<Catalog> existing = catalogRepository.findAll();
-        if (existing.isEmpty()) {
+    // Vetem admin - fshin nje katalog specifik sipas id
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCatalog(@PathVariable Long id) {
+        Optional<Catalog> found = catalogRepository.findById(id);
+
+        if (found.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        Catalog old = existing.get(0);
+
+        Catalog catalog = found.get();
+
         try {
-            cloudinary.uploader().destroy(old.getPublicId(), ObjectUtils.emptyMap());
+            cloudinary.uploader().destroy(catalog.getPublicId(), ObjectUtils.emptyMap());
         } catch (Exception e) {
-            // vazhdo edhe nëse Cloudinary dështon te fshirja, largo nga DB gjithsesi
+            // vazhdo edhe nese Cloudinary deshton
         }
-        catalogRepository.delete(old);
+
+        catalogRepository.delete(catalog);
         return ResponseEntity.ok().body(Map.of("deleted", true));
     }
 }

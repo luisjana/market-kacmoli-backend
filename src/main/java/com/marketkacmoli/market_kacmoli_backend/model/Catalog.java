@@ -10,6 +10,9 @@ public class Catalog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String title;
+
     @Column(nullable = false, length = 500)
     private String imageUrl;
 
@@ -21,7 +24,8 @@ public class Catalog {
     public Catalog() {
     }
 
-    public Catalog(String imageUrl, String publicId, LocalDateTime updatedAt) {
+    public Catalog(String title, String imageUrl, String publicId, LocalDateTime updatedAt) {
+        this.title = title;
         this.imageUrl = imageUrl;
         this.publicId = publicId;
         this.updatedAt = updatedAt;
@@ -33,6 +37,14 @@ public class Catalog {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getImageUrl() {
